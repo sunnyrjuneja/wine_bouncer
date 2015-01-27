@@ -4,7 +4,7 @@
 [![Code Climate](https://codeclimate.com/github/antek-drzewiecki/wine_bouncer/badges/gpa.svg)](https://codeclimate.com/github/antek-drzewiecki/wine_bouncer)
 [![Gem Version](https://badge.fury.io/rb/wine_bouncer.svg)](http://badge.fury.io/rb/wine_bouncer)
 
-Protect your precious Grape API with Doorkeeper. 
+Protect your precious Grape API with Doorkeeper.
 WineBouncer uses minimal modification, to make the magic happen.
 
 Table of Contents
@@ -16,6 +16,7 @@ Table of Contents
     * [Authentication strategies](#authentication-strategies)
       * [Default](#default)
       * [Swagger](#swagger)
+      * [Protected](#protected)
     * [Token information](#token-information)
   * [Exceptions and Exception handling](#exceptions-and-exception-handling)
   * [Development](#development)
@@ -24,7 +25,7 @@ Table of Contents
 
 ## Requirements
 - Ruby > 1.9.3
-- Doorkeeper > 1.4.0
+- Doorkeeper > 1.4.0 and =< 2.0.1
 - Grape > 0.8
 
 ## Installation
@@ -45,7 +46,7 @@ bundle
 When upgrading from a previous version, see [UPGRADING](UPGRADING.md). You might also be interested at the [CHANGELOG](CHANGELOG.md).
 
 ## Usage
-WineBouncer is a custom Grape Middleware used for Authentication and Authorization. We assume you have a Grape API mounted in your Rails application together with Doorkeeper.  
+WineBouncer is a custom Grape Middleware used for Authentication and Authorization. We assume you have a Grape API mounted in your Rails application together with Doorkeeper.
 
 To get started with WineBouncer, run the configuration initializer:
 
@@ -76,7 +77,7 @@ class Api < Grape::API
 end
 ```
 
-WineBouncer relies on Grape's endpoint method description to define if an endpoint method should be protected. 
+WineBouncer relies on Grape's endpoint method description to define if an endpoint method should be protected.
 It comes with authorization strategies that allow a custom format for your authorization definition. Pick an authentication strategy to get started.
 Currently the following strategies are included:
 
@@ -90,30 +91,30 @@ Example:
 
 ``` ruby
  class MyAwesomeAPI < Grape::API
-    desc 'protected method with required public scope', 
+    desc 'protected method with required public scope',
     auth: { scopes: ['public'] }
     get '/protected' do
        { hello: 'world' }
     end
-    
+
     desc 'Unprotected method'
     get '/unprotected' do
       { hello: 'unprotected world' }
     end
-    
+
     desc 'This method needs the public or private scope.',
     auth: { scopes: [ 'public', 'private' ] }
     get '/method' do
       { hello: 'public or private user.' }
     end
-    
-    desc 'This method uses Doorkeepers default scopes.', 
-    auth: { scopes: [] } 
+
+    desc 'This method uses Doorkeepers default scopes.',
+    auth: { scopes: [] }
     get '/protected_with_default_scope' do
        { hello: 'protected unscoped world' }
     end
  end
- 
+
  class Api < Grape::API
     default_format :json
     format :json
@@ -128,7 +129,7 @@ Example:
 
 WineBouncer comes with a strategy that can be perfectly used with [grape-swagger](https://github.com/tim-vandecasteele/grape-swagger) with a syntax compliant with the [swagger spec](https://github.com/wordnik/swagger-spec/).
 This might be one of the simplest methods to protect your API and serve it with documentation. You can use [swagger-ui](https://github.com/wordnik/swagger-ui) to view your documentation.
- 
+
 To get started ensure you also have included the `grape-swagger` gem in your gemfile.
 
 Run `bundle` to install the missing gems.
@@ -196,9 +197,51 @@ It defaults assumes when no description is given that no authorization should be
 When the authentication syntax is mentioned in the method description, the method will be protected.
 You can use the default scopes of Doorkeeper by just adding `authorizations: { oauth2: [] }` or state your own scopes with `authorizations: { oauth2: [ { scope: 'scope1' }, { scope: 'scope2' }, ... ] }`.
 
+#### Protected
+
+The protected strategy is very similiar to the default strategy except any public end point must explicitly set. To make an end point public, use `auth: false`. 
+If the authorization is not set, the end point is assumed to be protected and Doorkeeper's default scopes are used.
+
+Example:
+
+``` ruby
+ class MyAwesomeAPI < Grape::API
+    desc 'protected method with required public scope', 
+    auth: { scopes: ['public'] }
+    get '/protected' do
+       { hello: 'world' }
+    end
+    
+    desc 'Unprotected method'
+    get '/unprotected', auth: false do
+      { hello: 'unprotected world' }
+    end
+    
+    desc 'This method needs the public or private scope.',
+    auth: [:public, :private]
+    # Doorkeeper's default scopes are [:public, :private] so auth can be omitted. See next example.
+    get '/method' do
+      { hello: 'public or private user.' }
+    end
+    
+    desc 'This method uses Doorkeepers default scopes.'
+    get '/protected_with_default_scope' do
+       { hello: 'protected unscoped world' }
+    end
+ end
+ 
+ class Api < Grape::API
+    default_format :json
+    format :json
+    use ::WineBouncer::OAuth2
+    mount MyAwesomeAPI
+    add_swagger_documentation
+ end
+```
+
 ### Token information
 
-WineBouncer comes with free extras! Methods for `resource_owner` and `doorkeeper_access_token` get included in your endpoints. You can use them to get the current resource owner, and the access_token object of doorkeeper. 
+WineBouncer comes with free extras! Methods for `resource_owner` and `doorkeeper_access_token` get included in your endpoints. You can use them to get the current resource owner, and the access_token object of doorkeeper.
 
 ## Exceptions and Exception handling
 
@@ -206,12 +249,12 @@ This gem raises the following exceptions which can be handled in your Grape API,
 
 * `WineBouncer::Errors::OAuthUnauthorizedError`
    when the request is unauthorized.
-* `WineBouncer::Errors::OAuthForbiddenError` 
+* `WineBouncer::Errors::OAuthForbiddenError`
    when the token is found but scopes do not match.
 
 ## Development
 
-Since we want the gem tested against several rails versions we use the same way to prepare our development environment as Doorkeeper. 
+Since we want the gem tested against several rails versions we use the same way to prepare our development environment as Doorkeeper.
 
 To install the development environment for rails 3.2.18, you can also specify a different rails version to test against.
 

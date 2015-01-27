@@ -1,15 +1,12 @@
 # This file is copied to spec/ when you run 'rails generate rspec:install'
-ENV["RAILS_ENV"] ||= 'test'
+ENV['RAILS_ENV'] ||= 'test'
 ORM = (ENV['orm'] || :active_record).to_sym
 require 'spec_helper'
-require File.expand_path("../dummy/config/environment", __FILE__)
+require File.expand_path('../dummy/config/environment', __FILE__)
 require 'rspec/rails'
 require 'wine_bouncer'
 require 'factory_girl'
 require 'database_cleaner'
-require "codeclimate-test-reporter"
-
-CodeClimate::TestReporter.start
 
 # Add additional requires below this line. Rails is not loaded until this point!
 
